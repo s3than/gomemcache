@@ -123,7 +123,10 @@ var (
 	statsGetMisses    = []byte("STAT get_misses ")
 	statsBytesWritten = []byte("STAT bytes_written ")
 	statsItems        = []byte("STAT curr_items ")
+	statsTotalItems   = []byte("STAT total_items ")
 	statsBytes        = []byte("STAT bytes ")
+	statsMaxBytes     = []byte("STAT limit_maxbytes ")
+	statsUptime       = []byte("STAT uptime ")
 )
 
 // New returns a memcache client using the provided server(s)
@@ -204,8 +207,14 @@ type Statistics struct {
 	// Items is amount of keys currently in the cache.
 	Items uint64
 
+	TotalItems uint64
+
 	// Bytes is a size of all items currently in the cache.
 	Bytes uint64
+
+	MaxBytes uint64
+
+	Uptime uint64
 }
 
 // release returns this connection back to the client's free pool
@@ -779,8 +788,20 @@ func parseStatsResponse(r *bufio.Reader, stats *Statistics) error {
 			stats.Items = items
 			continue
 		}
+		if total_items, err := parseStatsLine(line, statsTotalItems); err == nil {
+			stats.TotalItems = total_items
+			continue
+		}
 		if bytes_total, err := parseStatsLine(line, statsBytes); err == nil {
 			stats.Bytes = bytes_total
+			continue
+		}
+		if max_bytes, err := parseStatsLine(line, statsMaxBytes); err == nil {
+			stats.MaxBytes = max_bytes
+			continue
+		}
+		if uptime, err := parseStatsLine(line, statsUptime); err == nil {
+			stats.Uptime = uptime
 			continue
 		}
 	}
